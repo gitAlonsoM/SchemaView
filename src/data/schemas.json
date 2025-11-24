@@ -1,0 +1,58 @@
+[
+    {
+        "id": "ebs-module",
+        "title": "EBS Architecture",
+        "icon": "fa-server",
+        "description": "Enterprise Business Suite Ecosystem Diagrams",
+        "images": [
+            {
+                "id": "img-ebs-001",
+                "title": "Unified Mobile-Web Ecosystem",
+                "src": "./public/assets/images/ebs-sql/Unified Mobile-Web Ecosystem.png",
+                "tags": ["mobile", "web", "architecture"]
+            }
+        ]
+    },
+    {
+        "id": "english-study",
+        "title": "English Study",
+        "icon": "fa-book-open",
+        "description": "Grammar rules and language diagrams",
+        "images": [
+            {
+                "id": "img-eng-001",
+                "title": "English Grammar Rules",
+                "src": "./public/assets/images/english/english-grammar.svg", 
+                "tags": ["grammar", "english", "rules"]
+            }
+        ]
+    },
+    {
+        "id": "networking",
+        "title": "Networking & Protocols",
+        "icon": "fa-wifi",
+        "description": "Network concepts and HTTP protocol diagrams",
+        "images": [
+            {
+                "id": "img-net-001",
+                "title": "HTTP Status Codes",
+                "src": "./public/assets/images/redes/HTTP Status.svg",
+                "tags": ["http", "protocol", "status"]
+            }
+        ]
+    },
+    {
+        "id": "oracle-sql",
+        "title": "Oracle SQL",
+        "icon": "fa-database",
+        "description": "Database structures and query flows",
+        "images": []
+    },
+    {
+        "id": "flutter-dev",
+        "title": "Flutter Development",
+        "icon": "fa-mobile-screen",
+        "description": "Widget trees and state management",
+        "images": []
+    }
+]
