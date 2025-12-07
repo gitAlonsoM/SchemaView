@@ -1,9 +1,6 @@
 // src/services/firebase.js
-
-// src/services/firebase.js
 // ======== Start Full File ========
 
-// 1. IMPORTS: CDN (No requiere npm)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, orderBy, updateDoc 
@@ -12,7 +9,7 @@ import {
     getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 2. CONFIGURATION
+// CONFIGURATION
 const firebaseConfig = {
   apiKey: "AIzaSyCW2vGe-m0QZeTWHORDs3L0fNXUhvw9WGM",
   authDomain: "schemaview-v2.firebaseapp.com",
@@ -23,24 +20,42 @@ const firebaseConfig = {
   measurementId: "G-XDXTJPXDNN"
 };
 
-// 3. INITIALIZATION
+// INITIALIZATION
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
 console.log("VERIFY: Firebase initialized.");
 
-// 4. SERVICE LAYER
+// SERVICE LAYER
 export const FirebaseService = {
     
     // --- TOPICS (Carpetas) ---
     async getTopics() {
         try {
             const querySnapshot = await getDocs(collection(db, "topics"));
+            // Ordenar alfabéticamente por título para que se vea ordenado
             const topics = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            return topics;
+            return topics.sort((a, b) => a.title.localeCompare(b.title));
         } catch (error) {
             console.error("DEBUG: Error fetching topics:", error);
+            throw error;
+        }
+    },
+
+    // NUEVO: Crear carpeta temática
+    async createTopic(title, icon, description) {
+        try {
+            const docRef = await addDoc(collection(db, "topics"), {
+                title: title,
+                icon: icon || "fa-folder", // Icono por defecto
+                description: description || "Carpeta de esquemas",
+                createdAt: Date.now()
+            });
+            console.log("VERIFY: Topic created with ID:", docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error("DEBUG: Error creating topic:", error);
             throw error;
         }
     },
@@ -64,13 +79,10 @@ export const FirebaseService = {
     async uploadImage(file, topicId, customTitle) {
         try {
             console.log("VERIFY: Uploading file...", file.name);
-            
-            // 1. Storage
             const storageRef = ref(storage, `images/${topicId}/${Date.now()}_${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
-            // 2. Firestore
             const docRef = await addDoc(collection(db, "images"), {
                 topicId: topicId,
                 src: downloadURL,
@@ -90,12 +102,10 @@ export const FirebaseService = {
 
     async deleteImage(imageId, storagePath) {
         try {
-            // Borrar de Storage si existe path
             if (storagePath) {
                 const imgRef = ref(storage, storagePath);
                 await deleteObject(imgRef).catch(e => console.warn("Storage delete warn:", e));
             }
-            // Borrar de DB
             await deleteDoc(doc(db, "images", imageId));
             console.log("VERIFY: Image deleted.");
         } catch (error) {

@@ -1,4 +1,3 @@
-//src\core\App.js
 // src/core/App.js
 // ======== Start Full File ========
 
@@ -9,7 +8,6 @@ import { FirebaseService } from '../services/firebase.js';
 class App {
     constructor() {
         this.appElement = document.getElementById('app');
-        // Auth Elements
         this.authModal = document.getElementById('auth-modal');
         this.authInput = document.getElementById('auth-input');
         this.authBtn = document.getElementById('auth-btn');
@@ -18,10 +16,13 @@ class App {
         this.sidebar = null;
         this.viewer = null;
         this.topics = [];
+
+        // TRUCO: Exponemos el servicio a la consola para ejecutar scripts
+        window.FirebaseService = FirebaseService;
+        window.AppInstance = this;
     }
 
     async init() {
-        // 1. Comprobar Contraseña
         if (!this.checkAuth()) {
             this.showLogin();
         } else {
@@ -29,7 +30,6 @@ class App {
         }
     }
 
-    // --- SEGURIDAD ---
     checkAuth() {
         return localStorage.getItem('schemaView_auth') === '1558';
     }
@@ -56,59 +56,55 @@ class App {
         });
     }
 
-    // --- INICIO APP ---
     async startApp() {
         console.log("VERIFY: Auth passed. Loading Firebase data...");
-        
         try {
             this.topics = await FirebaseService.getTopics();
             console.log("VERIFY: Topics loaded:", this.topics.length);
-            
             this.initComponents();
         } catch (error) {
             console.error("DEBUG: Fatal Init Error:", error);
-            this.appElement.innerHTML = `
-                <div class="text-red-500 p-10 font-mono">
-                    <h1 class="text-xl font-bold">Error de Conexión</h1>
-                    <p>No se pudo conectar a Firebase.</p>
-                    <p class="text-sm mt-2 opacity-75">${error.message}</p>
-                </div>`;
+            this.appElement.innerHTML = `<div class="text-red-500 p-10">Error de conexión: ${error.message}</div>`;
         }
     }
 
     initComponents() {
-        // Inicializar Sidebar
-        this.sidebar = new Sidebar(this.topics, (selectedTopic) => {
-            this.handleTopicChange(selectedTopic);
-        });
+        // Inicializar Sidebar con función de Crear
+        this.sidebar = new Sidebar(
+            this.topics, 
+            (selectedTopic) => this.handleTopicChange(selectedTopic), // Al seleccionar
+            (title, icon) => this.handleCreateTopic(title, icon)      // Al crear
+        );
 
-        // Inicializar Viewer
         this.viewer = new ImageViewer((isFocusMode) => {
             this.handleFocusMode(isFocusMode);
         });
 
         this.appElement.innerHTML = '';
-        this.appElement.appendChild(this.sidebar.render());
+        this.appElement.appendChild(this.sidebar.render());q
         this.appElement.appendChild(this.viewer.render());
     }
 
     handleTopicChange(topic) {
-        // Cargar imágenes del tema seleccionado
         this.viewer.loadTopic(topic);
-        
-        // Renderizar (si fuera necesario reemplazar el DOM, aunque el viewer se actualiza internamente)
         const currentMain = this.appElement.querySelector('main');
-        if (!currentMain) {
-            this.appElement.appendChild(this.viewer.container);
+        if (!currentMain) this.appElement.appendChild(this.viewer.container);
+    }
+
+    async handleCreateTopic(title, icon) {
+        try {
+            await FirebaseService.createTopic(title, icon);
+            // Recargar todo para actualizar la lista
+            await this.startApp();
+        } catch (e) {
+            alert("Error creando carpeta: " + e.message);
         }
     }
 
     handleFocusMode(active) {
         if (active) {
             setTimeout(() => {
-                if(document.querySelector('.fa-times')) { 
-                    this.sidebar.toggle(false); 
-                }
+                if(document.querySelector('.fa-times')) this.sidebar.toggle(false); 
             }, 1500);
         } else {
             this.sidebar.toggle(true); 
