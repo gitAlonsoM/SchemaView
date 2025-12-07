@@ -17,7 +17,6 @@ class App {
         this.viewer = null;
         this.topics = [];
 
-        // TRUCO: Exponemos el servicio a la consola para ejecutar scripts
         window.FirebaseService = FirebaseService;
         window.AppInstance = this;
     }
@@ -69,11 +68,12 @@ class App {
     }
 
     initComponents() {
-        // Inicializar Sidebar con función de Crear
         this.sidebar = new Sidebar(
             this.topics, 
-            (selectedTopic) => this.handleTopicChange(selectedTopic), // Al seleccionar
-            (title, icon) => this.handleCreateTopic(title, icon)      // Al crear
+            (selectedTopic) => this.handleTopicChange(selectedTopic), // Seleccionar
+            (title, icon) => this.handleCreateTopic(title, icon),     // Crear
+            (id, newName) => this.handleRenameTopic(id, newName),     // Renombrar
+            (id) => this.handleDeleteTopic(id)                        // Eliminar
         );
 
         this.viewer = new ImageViewer((isFocusMode) => {
@@ -81,7 +81,7 @@ class App {
         });
 
         this.appElement.innerHTML = '';
-        this.appElement.appendChild(this.sidebar.render());q
+        this.appElement.appendChild(this.sidebar.render());
         this.appElement.appendChild(this.viewer.render());
     }
 
@@ -94,10 +94,32 @@ class App {
     async handleCreateTopic(title, icon) {
         try {
             await FirebaseService.createTopic(title, icon);
-            // Recargar todo para actualizar la lista
-            await this.startApp();
+            await this.startApp(); // Recargar
         } catch (e) {
             alert("Error creando carpeta: " + e.message);
+        }
+    }
+
+    async handleRenameTopic(id, newName) {
+        try {
+            await FirebaseService.updateTopicTitle(id, newName);
+            await this.startApp(); // Recargar para ver el cambio
+        } catch (e) {
+            alert("Error al renombrar: " + e.message);
+        }
+    }
+
+    async handleDeleteTopic(id) {
+        try {
+            // Mostrar indicador de carga visual si fuera necesario, pero el reload es rápido
+            await FirebaseService.deleteTopic(id);
+            // Si el visor estaba mostrando esa carpeta, lo limpiamos
+            if (this.viewer.currentTopic && this.viewer.currentTopic.id === id) {
+                this.viewer.renderEmptyState();
+            }
+            await this.startApp(); // Recargar lista
+        } catch (e) {
+            alert("Error al eliminar: " + e.message);
         }
     }
 

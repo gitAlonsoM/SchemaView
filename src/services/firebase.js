@@ -34,7 +34,6 @@ export const FirebaseService = {
     async getTopics() {
         try {
             const querySnapshot = await getDocs(collection(db, "topics"));
-            // Ordenar alfabéticamente por título para que se vea ordenado
             const topics = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             return topics.sort((a, b) => a.title.localeCompare(b.title));
         } catch (error) {
@@ -43,12 +42,11 @@ export const FirebaseService = {
         }
     },
 
-    // NUEVO: Crear carpeta temática
     async createTopic(title, icon, description) {
         try {
             const docRef = await addDoc(collection(db, "topics"), {
                 title: title,
-                icon: icon || "fa-folder", // Icono por defecto
+                icon: icon || "fa-folder",
                 description: description || "Carpeta de esquemas",
                 createdAt: Date.now()
             });
@@ -56,6 +54,40 @@ export const FirebaseService = {
             return docRef.id;
         } catch (error) {
             console.error("DEBUG: Error creating topic:", error);
+            throw error;
+        }
+    },
+
+    // NUEVO: Renombrar carpeta
+    async updateTopicTitle(topicId, newTitle) {
+        try {
+            const topicRef = doc(db, "topics", topicId);
+            await updateDoc(topicRef, { title: newTitle });
+            console.log("VERIFY: Topic renamed.");
+        } catch (error) {
+            console.error("DEBUG: Error renaming topic:", error);
+            throw error;
+        }
+    },
+
+    // NUEVO: Borrar carpeta y TODO su contenido
+    async deleteTopic(topicId) {
+        try {
+            console.log("VERIFY: Starting cascade delete for topic:", topicId);
+            
+            // 1. Obtener todas las imágenes de esta carpeta
+            const images = await this.getImages(topicId);
+            
+            // 2. Borrar cada imagen (Storage y DB)
+            const deletePromises = images.map(img => this.deleteImage(img.id, img.storagePath));
+            await Promise.all(deletePromises); // Esperar a que se borren todas
+            
+            // 3. Borrar la carpeta (Topic)
+            await deleteDoc(doc(db, "topics", topicId));
+            
+            console.log("VERIFY: Topic and all contents deleted.");
+        } catch (error) {
+            console.error("DEBUG: Error deleting topic:", error);
             throw error;
         }
     },
