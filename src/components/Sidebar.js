@@ -1,4 +1,5 @@
-//src\components\Sidebar.js
+// src/components/Sidebar.js
+// ======== Start Full File ========
 
 export class Sidebar {
     constructor(topics, onTopicSelect) {
@@ -38,10 +39,13 @@ export class Sidebar {
                 hover:bg-gray-700 transition-all duration-200
                 text-gray-400 hover:text-white
             `;
+            
+            const count = topic.images ? topic.images.length : 0;
+
             li.innerHTML = `
-                <i class="fa-solid ${topic.icon} w-6 text-center group-hover:text-accent transition-colors"></i>
+                <i class="fa-solid ${topic.icon || 'fa-folder'} w-6 text-center group-hover:text-accent transition-colors"></i>
                 <span class="font-medium text-sm">${topic.title}</span>
-                <span class="ml-auto text-xs bg-dark px-2 py-1 rounded-full text-gray-500">${topic.images.length}</span>
+                ${count > 0 ? `<span class="ml-auto text-xs bg-dark px-2 py-1 rounded-full text-gray-500">${count}</span>` : ''}
             `;
 
             li.addEventListener('click', () => {
@@ -59,7 +63,7 @@ export class Sidebar {
         // Footer
         const footer = document.createElement('div');
         footer.className = 'p-4 border-t border-gray-800 text-xs text-center text-gray-600';
-        footer.textContent = 'v1.0.0 Local Storage';
+        footer.textContent = 'v2.0 Firebase Mode';
 
         container.appendChild(header);
         container.appendChild(list);
@@ -80,3 +84,4 @@ export class Sidebar {
         }
     }
 }
+// ======== End Full File ========

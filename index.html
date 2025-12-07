@@ -26,14 +26,30 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link rel="stylesheet" href="public/css/style.css">
 </head>
 <body class="bg-darker text-white font-sans h-screen overflow-hidden selection:bg-accent selection:text-white">
 
-    <div id="app" class="flex h-full w-full relative">
+    <div id="auth-modal" class="fixed inset-0 bg-darker z-[99999] flex items-center justify-center hidden">
+        <div class="bg-surface p-8 rounded-2xl border border-gray-700 shadow-2xl w-full max-w-md text-center">
+            <div class="mb-6">
+                <i class="fa-solid fa-lock text-4xl text-accent mb-2"></i>
+                <h2 class="text-2xl font-bold">Acceso Restringido</h2>
+                <p class="text-gray-400 text-sm">Introduce el código de acceso.</p>
+            </div>
+            <input type="password" id="auth-input" 
+                class="w-full bg-dark border border-gray-600 rounded-lg p-3 text-center text-xl tracking-widest focus:border-accent outline-none mb-4 transition-colors"
+                placeholder="****">
+            <button id="auth-btn" 
+                class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-blue-900/20 cursor-pointer">
+                Entrar
+            </button>
+            <p id="auth-error" class="text-red-500 text-sm mt-4 hidden">Código incorrecto</p>
+        </div>
+    </div>
+
+    <div id="app" class="flex h-full w-full relative transition-all duration-500">
         </div>
 
     <script type="module" src="./src/core/App.js"></script>
