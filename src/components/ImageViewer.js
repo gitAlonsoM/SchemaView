@@ -186,9 +186,12 @@ export class ImageViewer {
         const overlay = document.createElement('div');
         overlay.className = `fixed inset-0 bg-darker/98 z-[9999] flex items-center justify-center overflow-hidden animate-slide-in select-none`;
 
-        const imgWrapper = document.createElement('div');
-        imgWrapper.className = 'transition-transform duration-75 ease-out cursor-grab active:cursor-grabbing will-change-transform flex items-center justify-center w-full h-full';
+       const imgWrapper = document.createElement('div');
+        // CAMBIO: Eliminado "will-change-transform" para evitar que el navegador rasterice el SVG (lo convierta en pixeles fijos).
+        // Esto fuerza al navegador a redibujar los vectores al hacer zoom, manteniendo la calidad infinita.
+        imgWrapper.className = 'transition-transform duration-75 ease-out cursor-grab active:cursor-grabbing flex items-center justify-center w-full h-full';
         
+        console.log("VERIFY: SVG Rendering optimization applied (No-Rasterization mode).");
         const imgContent = document.createElement('img');
         imgContent.src = imgData.src;
         imgContent.className = 'max-w-none max-h-none shadow-2xl pointer-events-none bg-white/5 rounded-sm'; 
