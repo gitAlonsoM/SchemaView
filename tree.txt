@@ -1,0 +1,33 @@
+epu@Epus-Mac-mini SchemaView % tree
+.
+├── index.html
+├── public
+│   ├── assets
+│   │   └── images
+│   │       ├── ebs-sql
+│   │       │   └── Unified Mobile-Web Ecosystem.png
+│   │       ├── english
+│   │       │   └── english-grammar.svg
+│   │       └── redes
+│   │           └── HTTP Status.svg
+│   └── css
+│       └── style.css
+├── README.md
+├── src
+│   ├── components
+│   │   ├── ImageViewer.js
+│   │   └── Sidebar.js
+│   ├── core
+│   │   └── App.js
+│   ├── data
+│   │   └── schemas.json
+│   ├── services
+│   │   └── firebase.js
+│   └── utils
+│       └── DOMHelper.js
+└── tree.txt
+
+14 directories, 13 files
+epu@Epus-Mac-mini SchemaView % 
+
+

@@ -9,7 +9,6 @@ import {
     getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// CONFIGURATION
 const firebaseConfig = {
   apiKey: "AIzaSyCW2vGe-m0QZeTWHORDs3L0fNXUhvw9WGM",
   authDomain: "schemaview-v2.firebaseapp.com",
@@ -20,29 +19,29 @@ const firebaseConfig = {
   measurementId: "G-XDXTJPXDNN"
 };
 
-// INITIALIZATION
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-console.log("VERIFY: Firebase initialized.");
+console.log("VERIFY: [Firebase] Connection established.");
 
-// SERVICE LAYER
 export const FirebaseService = {
     
-    // --- TOPICS (Carpetas) ---
     async getTopics() {
+        console.log("VERIFY: [FirebaseService] Fetching all topics...");
         try {
             const querySnapshot = await getDocs(collection(db, "topics"));
             const topics = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`VERIFY: [FirebaseService] ${topics.length} topics retrieved.`);
             return topics.sort((a, b) => a.title.localeCompare(b.title));
         } catch (error) {
-            console.error("DEBUG: Error fetching topics:", error);
+            console.error("DEBUG: [FirebaseService] Error getTopics:", error);
             throw error;
         }
     },
 
     async createTopic(title, icon, description) {
+        console.log(`VERIFY: [FirebaseService] Creating topic: '${title}'...`);
         try {
             const docRef = await addDoc(collection(db, "topics"), {
                 title: title,
@@ -50,50 +49,45 @@ export const FirebaseService = {
                 description: description || "Carpeta de esquemas",
                 createdAt: Date.now()
             });
-            console.log("VERIFY: Topic created with ID:", docRef.id);
+            console.log(`VERIFY: [FirebaseService] Topic created successfully. ID: ${docRef.id}`);
             return docRef.id;
         } catch (error) {
-            console.error("DEBUG: Error creating topic:", error);
+            console.error("DEBUG: [FirebaseService] Error createTopic:", error);
             throw error;
         }
     },
 
-    // NUEVO: Renombrar carpeta
     async updateTopicTitle(topicId, newTitle) {
+        console.log(`VERIFY: [FirebaseService] Renaming topic ID ${topicId} to '${newTitle}'...`);
         try {
             const topicRef = doc(db, "topics", topicId);
             await updateDoc(topicRef, { title: newTitle });
-            console.log("VERIFY: Topic renamed.");
+            console.log("VERIFY: [FirebaseService] Topic renamed successfully.");
         } catch (error) {
-            console.error("DEBUG: Error renaming topic:", error);
+            console.error("DEBUG: [FirebaseService] Error updateTopicTitle:", error);
             throw error;
         }
     },
 
-    // NUEVO: Borrar carpeta y TODO su contenido
     async deleteTopic(topicId) {
+        console.log(`VERIFY: [FirebaseService] CASCADE DELETE initiated for topic ID: ${topicId}`);
         try {
-            console.log("VERIFY: Starting cascade delete for topic:", topicId);
-            
-            // 1. Obtener todas las imágenes de esta carpeta
             const images = await this.getImages(topicId);
+            console.log(`VERIFY: [FirebaseService] Found ${images.length} images to delete.`);
             
-            // 2. Borrar cada imagen (Storage y DB)
             const deletePromises = images.map(img => this.deleteImage(img.id, img.storagePath));
-            await Promise.all(deletePromises); // Esperar a que se borren todas
+            await Promise.all(deletePromises); 
             
-            // 3. Borrar la carpeta (Topic)
             await deleteDoc(doc(db, "topics", topicId));
-            
-            console.log("VERIFY: Topic and all contents deleted.");
+            console.log("VERIFY: [FirebaseService] Topic and all contents deleted successfully.");
         } catch (error) {
-            console.error("DEBUG: Error deleting topic:", error);
+            console.error("DEBUG: [FirebaseService] Error deleteTopic:", error);
             throw error;
         }
     },
 
-    // --- IMAGES ---
     async getImages(topicId) {
+        console.log(`VERIFY: [FirebaseService] Fetching images for topic ID: ${topicId}...`);
         try {
             const q = query(
                 collection(db, "images"), 
@@ -101,18 +95,26 @@ export const FirebaseService = {
                 orderBy("uploadedAt", "desc")
             );
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const imgs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`VERIFY: [FirebaseService] ${imgs.length} images loaded.`);
+            return imgs;
         } catch (error) {
-            console.error("DEBUG: Error fetching images:", error);
+            console.error("DEBUG: [FirebaseService] Error getImages:", error);
             throw error;
         }
     },
 
     async uploadImage(file, topicId, customTitle) {
+        console.log(`VERIFY: [FirebaseService] START UPLOAD: ${file.name} (${file.type}, ${file.size} bytes)`);
         try {
-            console.log("VERIFY: Uploading file...", file.name);
-            const storageRef = ref(storage, `images/${topicId}/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
+            const metadata = {
+                contentType: file.type,
+                customMetadata: { 'originalName': file.name }
+            };
+
+            const storagePath = `images/${topicId}/${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, storagePath);
+            const snapshot = await uploadBytes(storageRef, file, metadata);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
             const docRef = await addDoc(collection(db, "images"), {
@@ -121,38 +123,42 @@ export const FirebaseService = {
                 title: customTitle || file.name,
                 fileName: file.name,
                 storagePath: snapshot.metadata.fullPath,
-                uploadedAt: Date.now()
+                uploadedAt: Date.now(),
+                size: file.size, 
+                type: file.type // Aquí guardamos el MIME TYPE real
             });
 
-            console.log("VERIFY: Upload success ID:", docRef.id);
+            console.log(`VERIFY: [FirebaseService] Upload Success. Document ID: ${docRef.id}`);
             return { id: docRef.id, src: downloadURL, title: customTitle };
         } catch (error) {
-            console.error("DEBUG: Upload failed:", error);
+            console.error("DEBUG: [FirebaseService] Upload Failed:", error);
             throw error;
         }
     },
 
     async deleteImage(imageId, storagePath) {
+        console.log(`VERIFY: [FirebaseService] Deleting image ID: ${imageId}...`);
         try {
             if (storagePath) {
                 const imgRef = ref(storage, storagePath);
-                await deleteObject(imgRef).catch(e => console.warn("Storage delete warn:", e));
+                await deleteObject(imgRef);
             }
             await deleteDoc(doc(db, "images", imageId));
-            console.log("VERIFY: Image deleted.");
+            console.log("VERIFY: [FirebaseService] Image deleted from Storage and DB.");
         } catch (error) {
-            console.error("DEBUG: Delete failed:", error);
+            console.error("DEBUG: [FirebaseService] Delete Failed:", error);
             throw error;
         }
     },
 
     async renameImage(imageId, newTitle) {
+        console.log(`VERIFY: [FirebaseService] Renaming image ID ${imageId} to '${newTitle}'...`);
         try {
             const imageRef = doc(db, "images", imageId);
             await updateDoc(imageRef, { title: newTitle });
-            console.log("VERIFY: Renamed successfully.");
+            console.log("VERIFY: [FirebaseService] Image title updated.");
         } catch (error) {
-            console.error("DEBUG: Rename failed:", error);
+            console.error("DEBUG: [FirebaseService] Rename Failed:", error);
             throw error;
         }
     }
